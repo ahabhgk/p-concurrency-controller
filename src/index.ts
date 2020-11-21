@@ -1,4 +1,5 @@
 import { ConcurrencyResult } from './concurrency-result';
+import { defer, Defer } from './defer';
 
 export type Task<T> = () => Promise<T>;
 
@@ -43,9 +44,9 @@ export class PromiseConcurrencyController<T> {
   }
 
   private next() {
-    if (this.stopResolver) {
+    if (this.stopDefer) {
       if (this.activeCount === 0) {
-        this.stopResolver();
+        this.stopDefer.resolve();
       }
       return;
     }
@@ -58,16 +59,17 @@ export class PromiseConcurrencyController<T> {
     }
   }
 
-  private stopResolver: ((value?: void | PromiseLike<void> | undefined) => void) | null = null;
+  private stopDefer: Defer<void> | null = null;
 
   stop(): Promise<void> {
-    return new Promise((resolve) => {
-      this.stopResolver = resolve;
-    });
+    if (!this.stopDefer) {
+      this.stopDefer = defer();
+    }
+    return this.stopDefer.promise;
   }
 
   resume() {
-    this.stopResolver = null;
+    this.stopDefer = null;
     this.run();
   }
 }

@@ -83,6 +83,22 @@ test('should be able to resume the controller', (t) => {
   })();
 });
 
+test('should be able to return the same promise if already stop', (t) => {
+  const controller = new PromiseConcurrencyController(1);
+  const tasks = Array.from({ length: 3 }, () => async () => {
+    await delay(Math.random() * 1000);
+  });
+  controller.run(...tasks);
+  (async () => {
+    const stopPromise1 = controller.stop();
+    const stopPromise2 = controller.stop();
+    t.true(stopPromise1 === stopPromise2);
+    await stopPromise1;
+    const stopPromise3 = controller.stop();
+    t.true(stopPromise1 === stopPromise3);
+  })();
+});
+
 test('should be able to get the running task number by activeCount', (t) => {
   const controller = new PromiseConcurrencyController(1);
   controller.run(async () => delay(Math.random() * 100));
