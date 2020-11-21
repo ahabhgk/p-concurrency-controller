@@ -17,24 +17,36 @@ test.afterEach((t) => {
   t.context.timer.restore();
 });
 
-test('concurrency: 5', async (t) => {
+test('should be able to handle concurrency: 5', async (t) => {
   const concurrency = 5;
   const controller = new PromiseConcurrencyController(concurrency);
-  const input = Array.from({ length: 100 }, () => async () => {
+  const tasks = Array.from({ length: 100 }, () => async () => {
     t.true(controller.activeCount <= concurrency);
     await delay(Math.random() * 100);
   });
-  controller.run(...input);
+  controller.run(...tasks);
 });
 
-test('concurrency: 1', (t) => {
+test('should be able to handle concurrency: 1', (t) => {
   const concurrency = 1;
   const controller = new PromiseConcurrencyController(concurrency);
-  const input = Array.from({ length: 5 }, () => async () => {
+  const tasks = Array.from({ length: 3 }, () => async () => {
     t.true(controller.activeCount === concurrency);
     await delay(Math.random() * 100);
   });
-  controller.run(...input);
+  controller.run(...tasks.slice());
+  controller.run(...tasks.slice());
+});
+
+test('should be able to handle multiple run', (t) => {
+  const concurrency = 1;
+  const controller = new PromiseConcurrencyController(concurrency);
+  const tasks = Array.from({ length: 3 }, () => async () => {
+    t.true(controller.activeCount === concurrency);
+    await delay(Math.random() * 100);
+  });
+  controller.run(...tasks);
+  controller.run(...tasks);
 });
 
 test('should be able to return a ConcurrencyResult instance', (t) => {
@@ -45,10 +57,10 @@ test('should be able to return a ConcurrencyResult instance', (t) => {
 
 test('should be able to stop the controller', (t) => {
   const controller = new PromiseConcurrencyController(1);
-  const input = Array.from({ length: 3 }, () => async () => {
+  const tasks = Array.from({ length: 3 }, () => async () => {
     await delay(Math.random() * 1000);
   });
-  controller.run(...input);
+  controller.run(...tasks);
   (async () => {
     t.is(controller.activeCount, 1);
     await controller.stop();
@@ -58,10 +70,10 @@ test('should be able to stop the controller', (t) => {
 
 test('should be able to resume the controller', (t) => {
   const controller = new PromiseConcurrencyController(1);
-  const input = Array.from({ length: 3 }, () => async () => {
+  const tasks = Array.from({ length: 3 }, () => async () => {
     await delay(Math.random() * 1000);
   });
-  controller.run(...input);
+  controller.run(...tasks);
   (async () => {
     t.is(controller.activeCount, 1);
     await controller.stop();
